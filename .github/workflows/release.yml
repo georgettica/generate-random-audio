@@ -1,0 +1,44 @@
+name: Release Workflow
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Build Binary
+        run: cargo build --release
+
+      - name: Generate Checksum
+        run: |
+          BINARY_NAME="your_binary_name"
+          CHECKSUM=$(sha256sum target/release/$BINARY_NAME | cut -d " " -f 1)
+          echo "SHA256 Checksum: $CHECKSUM" > checksum.txt
+
+      - name: Generate SBOM
+        run: cargo install cargo-spdx
+        env:
+          CARGO_TERM_COLOR: "always"
+        working-directory: ${{ github.workspace }}
+      
+      - name: Publish Binary, Checksum, and SBOM
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            target/release/your_binary_name
+            checksum.txt
+            spdx.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

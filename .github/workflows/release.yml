@@ -6,39 +6,43 @@ on:
       - created
 
 jobs:
-  build:
+  release:
+    name: release ${{ matrix.target }}
     runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-gnu
+            archive: zip
+          - target: x86_64-unknown-linux-musl
+            archive: tar.gz tar.xz tar.zst
+          - target: x86_64-apple-darwin
+            archive: zip
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@3
+      - name: Compile and release
+        id: compile
+        uses: rust-build/rust-build.action@v1.4.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          profile: minimal
-
-      - name: Build Binary
-        run: cargo build --release
-
-      - name: Generate Checksum
-        run: |
-          BINARY_NAME="your_binary_name"
-          CHECKSUM=$(sha256sum target/release/$BINARY_NAME | cut -d " " -f 1)
-          echo "SHA256 Checksum: $CHECKSUM" > checksum.txt
-
+          RUSTTARGET: ${{ matrix.target }}
+          ARCHIVE_TYPES: ${{ matrix.archive }}
+          UPLOAD_MODE: none
       - name: Generate SBOM
-        run: cargo install cargo-spdx
+        run: |
+          cargo install cargo-spdx
+          cargo spdx
         env:
           CARGO_TERM_COLOR: "always"
         working-directory: ${{ github.workspace }}
-      
-      - name: Publish Binary, Checksum, and SBOM
-        uses: softprops/action-gh-release@v1
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
         with:
-          files: |
-            target/release/your_binary_name
-            checksum.txt
+          name: Binary
+          path: |
+            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
+            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
             spdx.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

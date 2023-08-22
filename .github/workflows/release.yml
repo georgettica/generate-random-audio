@@ -16,7 +16,7 @@ jobs:
           - target: x86_64-pc-windows-gnu
             archive: zip
           - target: x86_64-unknown-linux-musl
-            archive: tar.gz tar.xz tar.zst
+            archive: tar.gz
           - target: x86_64-apple-darwin
             archive: zip
     steps:
@@ -69,12 +69,17 @@ jobs:
       #     asset_path: ${{ steps.compile.outputs.BUILT_CHECKSUM }}
       #     asset_name: ${{ steps.compile.outputs.BUILT_CHECKSUM }}
       #     asset_content_type: application/text
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
+      - name: Release
+        uses: ncipollo/release-action@main
         with:
-          name: Binary
-          path: |
-            ${{ steps.compile.outputs.BUILT_ARCHIVE }}
-            ${{ steps.compile.outputs.BUILT_CHECKSUM }}
-            spdx.txt
+          allowUpdates: true
+          artifacts: ${{ steps.compile.outputs.BUILT_ARCHIVE }},${{ steps.compile.outputs.BUILT_CHECKSUM }}
+          # spdx.txt
+
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          
+          artifactErrorsFailBuild: true
+
+          token: ${{ secrets.GITHUB_TOKEN }}
+          

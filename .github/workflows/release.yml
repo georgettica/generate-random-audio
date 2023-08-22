@@ -41,13 +41,9 @@ jobs:
       - uses: actions/github-script@v6
         with:
           script: |
-            
-            # var fs = require('fs').promises
-            # var textResult = await fs.readFile("Dockerfile", "utf8");
-            #for (i in data) {
-            #  ({envvar,  ...releaseRepo} = data[i])
-            const res = await github.rest.repos.getLatestRelease({owner: "georgettica", repo: "generate-random-audio"})
-            console.log(repo.upload_url)
+            const data = {owner: "georgettica", repo: "generate-random-audio"}
+            const res = await github.rest.repos.getLatestRelease(data)
+            console.log(res)
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3

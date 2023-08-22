@@ -19,8 +19,11 @@ jobs:
             archive: tar.gz
           - target: x86_64-apple-darwin
             archive: zip
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
+
       - name: Compile and release
         id: compile
         uses: rust-build/rust-build.action@v1.4.3
@@ -30,55 +33,46 @@ jobs:
           RUSTTARGET: ${{ matrix.target }}
           ARCHIVE_TYPES: ${{ matrix.archive }}
           UPLOAD_MODE: none
+      
+      - name: Cache Primes
+        id: cache-primes
+        uses: actions/cache@v3
+        with:
+          path: /home/runner/.cargo/bin/cargo-cyclonedx
+          key: primes
+
+      - name: Generate Prime Numbers
+        if: steps.cache-primes.outputs.cache-hit != 'true'
+        run:  cargo install cargo-cyclonedx
+
       # fails on windows, maybe later we can debug
       - name: Generate SBOM
         if: "${{ matrix.target != 'x86_64-pc-windows-gnu' }}"
         run: |
-          cargo install cargo-cyclonedx
           cargo cyclonedx
         env:
           CARGO_TERM_COLOR: "always"
         working-directory: ${{ github.workspace }}
 
-      # - uses: actions/github-script@v6
-      #   with:
-      #     script: |
-      #       const fs = require('fs');
-
-      #       const data = {owner: "georgettica", repo: "generate-random-audio"}
-      #       const res = await github.rest.repos.getLatestRelease(data)
-      #       const output_url = res["data"]["upload_url"]
-      #       const release_id = res["data"]["id"]
-          
-      #       fs.appendFile(process.env.GITHUB_ENV, 'RELEASE_OUTPUT_URL="' + output_url + '"', function (err) {
-      #         if (err) throw err;
-      #         console.log('Saved!');
-      #       });
-      #       fs.appendFile(process.env.GITHUB_ENV, 'RELEASE_ID="' + release_id + '"', function (err) {
-      #         if (err) throw err;
-      #         console.log('Saved!');
-      #       });
-            
-      # - name: Upload Release Asset
-      #   id: upload-release-asset 
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ env.RELEASE_OUTPUT_URL }}
-      #     asset_path: ${{ steps.compile.outputs.BUILT_CHECKSUM }}
-      #     asset_name: ${{ steps.compile.outputs.BUILT_CHECKSUM }}
-      #     asset_content_type: application/text
       - name: Release
+        id: release
         uses: ncipollo/release-action@main
         with:
           allowUpdates: true
-          artifacts: ${{ steps.compile.outputs.BUILT_ARCHIVE }},${{ steps.compile.outputs.BUILT_CHECKSUM }},bom.xml
-          # spdx.txt
+          artifacts: ${{ steps.compile.outputs.BUILT_ARCHIVE }},${{ steps.compile.outputs.BUILT_CHECKSUM }}
 
           omitBodyDuringUpdate: true
           omitNameDuringUpdate: true
           
           artifactErrorsFailBuild: true
 
-          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
+      - name: Upload Release Asset
+        if: "${{ matrix.target != 'x86_64-pc-windows-gnu' }}"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: bom.xml
+          asset_name: bom.xml
+          asset_content_type: application/text

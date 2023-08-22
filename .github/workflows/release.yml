@@ -36,28 +36,29 @@ jobs:
         run: |
           cargo install cargo-spdx
           cargo spdx
+          mv spdx.txt ${{ matrix.target}}.spdx.txt
         env:
           CARGO_TERM_COLOR: "always"
         working-directory: ${{ github.workspace }}
 
-      - uses: actions/github-script@v6
-        with:
-          script: |
-            const fs = require('fs');
+      # - uses: actions/github-script@v6
+      #   with:
+      #     script: |
+      #       const fs = require('fs');
 
-            const data = {owner: "georgettica", repo: "generate-random-audio"}
-            const res = await github.rest.repos.getLatestRelease(data)
-            const output_url = res["data"]["upload_url"]
-            const release_id = res["data"]["id"]
+      #       const data = {owner: "georgettica", repo: "generate-random-audio"}
+      #       const res = await github.rest.repos.getLatestRelease(data)
+      #       const output_url = res["data"]["upload_url"]
+      #       const release_id = res["data"]["id"]
           
-            fs.appendFile(process.env.GITHUB_ENV, 'RELEASE_OUTPUT_URL="' + output_url + '"', function (err) {
-              if (err) throw err;
-              console.log('Saved!');
-            });
-            fs.appendFile(process.env.GITHUB_ENV, 'RELEASE_ID="' + release_id + '"', function (err) {
-              if (err) throw err;
-              console.log('Saved!');
-            });
+      #       fs.appendFile(process.env.GITHUB_ENV, 'RELEASE_OUTPUT_URL="' + output_url + '"', function (err) {
+      #         if (err) throw err;
+      #         console.log('Saved!');
+      #       });
+      #       fs.appendFile(process.env.GITHUB_ENV, 'RELEASE_ID="' + release_id + '"', function (err) {
+      #         if (err) throw err;
+      #         console.log('Saved!');
+      #       });
             
       # - name: Upload Release Asset
       #   id: upload-release-asset 
@@ -73,7 +74,7 @@ jobs:
         uses: ncipollo/release-action@main
         with:
           allowUpdates: true
-          artifacts: ${{ steps.compile.outputs.BUILT_ARCHIVE }},${{ steps.compile.outputs.BUILT_CHECKSUM }}
+          artifacts: ${{ steps.compile.outputs.BUILT_ARCHIVE }},${{ steps.compile.outputs.BUILT_CHECKSUM }},${{ matrix.target}}.spdx.txt
           # spdx.txt
 
           omitBodyDuringUpdate: true
@@ -81,5 +82,5 @@ jobs:
           
           artifactErrorsFailBuild: true
 
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
           

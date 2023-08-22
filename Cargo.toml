@@ -1,5 +1,5 @@
 [package]
-name = "bob"
+name = "generate-random-audio"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,5 +10,5 @@ hound = "3.0"
 rand = "0.8"
 
 [[bin]]
-name = "bob"
+name = "generate-random-audio"
 path = "main.rs"

@@ -34,9 +34,9 @@ jobs:
       - name: Generate SBOM
         if: "${{ matrix.target != 'x86_64-pc-windows-gnu' }}"
         run: |
-          cargo install cargo-spdx
-          cargo spdx
-          mv spdx.txt ${{ matrix.target}}.spdx.txt
+          cargo install cargo-cyclonedx
+          cargo cyclonedx
+          mv bom.xml ${{ matrix.target}}.bom.xml
         env:
           CARGO_TERM_COLOR: "always"
         working-directory: ${{ github.workspace }}
@@ -74,7 +74,7 @@ jobs:
         uses: ncipollo/release-action@main
         with:
           allowUpdates: true
-          artifacts: ${{ steps.compile.outputs.BUILT_ARCHIVE }},${{ steps.compile.outputs.BUILT_CHECKSUM }},${{ matrix.target}}.spdx.txt
+          artifacts: ${{ steps.compile.outputs.BUILT_ARCHIVE }},${{ steps.compile.outputs.BUILT_CHECKSUM }},${{ matrix.target}}.bom.xml
           # spdx.txt
 
           omitBodyDuringUpdate: true

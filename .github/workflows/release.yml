@@ -65,14 +65,10 @@ jobs:
           omitNameDuringUpdate: true
           
           artifactErrorsFailBuild: true
-
       - name: Upload Release Asset
         if: "${{ matrix.target != 'x86_64-pc-windows-gnu' }}"
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: bom.json
-          asset_name: bom.json
-          asset_content_type: application/text
+        run: |
+          tag=${GITHUB_REF#refs/tags/}
+          gh release upload ${tag} bom.json
